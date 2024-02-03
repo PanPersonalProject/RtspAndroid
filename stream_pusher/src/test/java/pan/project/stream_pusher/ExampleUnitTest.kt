@@ -1,4 +1,4 @@
-package pan.lib.streampusher
+package pan.project.stream_pusher
 
 import org.junit.Test
 

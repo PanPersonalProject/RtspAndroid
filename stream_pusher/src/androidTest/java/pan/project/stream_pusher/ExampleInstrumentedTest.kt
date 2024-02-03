@@ -1,4 +1,4 @@
-package pan.lib.streampusher
+package pan.project.stream_pusher
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -19,6 +19,6 @@ class ExampleInstrumentedTest {
     fun useAppContext() {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("pan.lib.streampusher.test", appContext.packageName)
+        assertEquals("pan.project.stream_pusher.test", appContext.packageName)
     }
 }

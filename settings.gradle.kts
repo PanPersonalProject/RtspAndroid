@@ -21,5 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "FastRtspLive"
 include(":app")
-include(":streampusher")
+include(":stream_pusher")
 include(":camera_record")
