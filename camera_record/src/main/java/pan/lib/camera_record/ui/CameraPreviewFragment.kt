@@ -16,14 +16,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.LifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
 import com.permissionx.guolindev.PermissionX
-import pan.lib.camera_record.NativeLib
 import pan.lib.camera_record.databinding.FragmentCameraPreviewBinding
 import pan.lib.camera_record.media.Encoder
 import pan.lib.camera_record.media.HardEncodeUtils
-import pan.lib.camera_record.media.Test
-import pan.lib.camera_record.media.Yuv
-import pan.lib.camera_record.media.YuvUtil
-import java.nio.ByteBuffer
+import pan.lib.camera_record.media.ImageUtil
 import java.util.concurrent.Executors
 
 /**
@@ -32,7 +28,6 @@ import java.util.concurrent.Executors
  */
 class CameraPreviewFragment : Fragment() {
 
-    private val TAG = "CameraPreviewFragment"
     private var _binding: FragmentCameraPreviewBinding? = null
     private val binding get() = _binding!!
     private lateinit var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>
@@ -59,6 +54,10 @@ class CameraPreviewFragment : Fragment() {
         requestCamera()
         binding.cameraSwitchButton.setOnClickListener {
             switchCamera()
+        }
+
+        binding.stopButton.setOnClickListener {
+            mHardEncodeUtils.stopEncoding()
         }
 
     }
@@ -115,7 +114,7 @@ class CameraPreviewFragment : Fragment() {
 //        encoder.start()
 
         mHardEncodeUtils = HardEncodeUtils()
-        mHardEncodeUtils.init()
+        mHardEncodeUtils.init(requireContext(),width, height)
         mHardEncodeUtils.startRun()
         val rotation = binding.prewview.display.rotation
 
@@ -124,44 +123,10 @@ class CameraPreviewFragment : Fragment() {
             .setTargetRotation(rotation)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST) // 非阻塞式，保留最新的图像
             .build()
-        val nativeLib = NativeLib()
+
         // 创建一个新的线程执行器，并设置为图像分析器的执行器。当有新的图像可用时，分析器的代码将在这个新的线程上执行。
         imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
-            val width = imageProxy.width
-            val height = imageProxy.height
-            val format = imageProxy.format
-            val planeProxyY = imageProxy.planes[0]
-            val planeProxyU = imageProxy.planes[1]
-            val planeProxyV = imageProxy.planes[2]
-
-            val pixelStrideY = planeProxyY.pixelStride
-            val rowStrideY = planeProxyY.rowStride
-            val bufferY = planeProxyY.buffer
-            val remainingY = bufferY.remaining()
-
-            val pixelStrideU = planeProxyU.pixelStride
-            val rowStrideU = planeProxyU.rowStride
-            val bufferU = planeProxyU.buffer
-            val remainingU = bufferU.remaining()
-
-            val pixelStrideV = planeProxyV.pixelStride
-            val rowStrideV = planeProxyV.rowStride
-            val bufferV = planeProxyV.buffer
-            val remainingV = bufferV.remaining()
-            val yuv420888tonv21 = Test.yuv_420_888toNv21(imageProxy);
-//            val byteBuffer = YuvUtil.yuv420ToNV21(imageProxy)
-//            val yuvToNV21 = nativeLib.yuvToNV21(
-//                width,
-//                height,
-//                bufferY,
-//                remainingY,
-//                bufferU,
-//                remainingU,
-//                bufferV,
-//                remainingV
-//            )
-//            encoder.onNewYuvData(ByteBuffer.wrap(yuv420888tonv21))
-            mHardEncodeUtils.setData(yuv420888tonv21)
+            mHardEncodeUtils.setData(ImageUtil.yuv_420_888toNv21(imageProxy))
             imageProxy.close()
         }
 
@@ -177,6 +142,7 @@ class CameraPreviewFragment : Fragment() {
     override fun onDestroyView() {
 //        encoder.stop()
 //        encoder.release()
+        mHardEncodeUtils.stopEncoding()
         super.onDestroyView()
         _binding = null
     }
