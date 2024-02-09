@@ -1,13 +1,17 @@
 package pan.lib.camera_record.media
 
 
+import android.content.Context
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
 import android.media.MediaFormat
 import android.util.Log
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
-import java.util.LinkedList
-import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.LinkedBlockingQueue
 
 /**
  * 这个类的主要功能是将输入的YUV数据编码为H.264数据。
@@ -16,8 +20,9 @@ import java.util.concurrent.ConcurrentLinkedDeque
  */
 class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
     private var isStarted = false  // 用于标记编码器是否已经启动
-    private var isEncoding = false  // 用于标记是否正在执行encode方法
 
+
+    private var mediaType = MediaFormat.MIMETYPE_VIDEO_AVC
 
     // MediaCodec用于编码视频数据
     private lateinit var codec: MediaCodec
@@ -26,18 +31,22 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
     private lateinit var format: MediaFormat
 
     // 创建一个队列来存储待处理的YUV数据
-    private val queue = ConcurrentLinkedDeque<ByteBuffer>()
+    private val queue = LinkedBlockingQueue<ByteArray>()
+
+    private var context: Context? = null
 
     // 初始化方法，用于创建和配置MediaCodec
-    fun init(width: Int, height: Int) {
+    fun init(context: Context, width: Int, height: Int) {
+        this.context = context
         // 创建一个MediaCodec用于编码，编码类型为H.264
-        codec = MediaCodec.createEncoderByType(MediaFormat.MIMETYPE_VIDEO_AVC)
+        codec = MediaCodec.createEncoderByType(mediaType)
 
         // 创建一个MediaFormat用于配置MediaCodec，设置视频的宽度、高度、比特率、帧率、颜色格式和I帧间隔
         format =
-            MediaFormat.createVideoFormat(MediaFormat.MIMETYPE_VIDEO_AVC, width, height).apply {
-                setInteger(MediaFormat.KEY_BIT_RATE, 125000)
+            MediaFormat.createVideoFormat(mediaType, width, height).apply {
+                setInteger(MediaFormat.KEY_BIT_RATE, height * width * 5)
                 setInteger(MediaFormat.KEY_FRAME_RATE, 30)
+                setInteger(MediaFormat.KEY_CAPTURE_RATE, 30)
                 setInteger(
                     MediaFormat.KEY_COLOR_FORMAT,
                     MediaCodecInfo.CodecCapabilities.COLOR_FormatYUV420Flexible
@@ -49,24 +58,18 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
         codec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
     }
 
-    fun onNewYuvData(yuvData: ByteBuffer) {
-//        YuvUtil.printYuvData(yuvData)
+    fun onNewYuvData(yuvData: ByteArray) {
         // 当有新的YUV数据到来时，将其添加到队列中
-        queue.add(yuvData)
-
-        // 如果当前没有在执行encode函数，那么开始处理队列中的YUV数据
-        if (!isEncoding) {
-            processQueue()
-        }
+        queue.put(yuvData)
     }
 
     private fun processQueue() {
 
-        if (!isStarted || queue.size < 10) {
+        if (!isStarted) {
             return
         }
         // 从队列中取出并移除一个YUV数据
-        val yuvData = queue.poll()
+        val yuvData = queue.take()
 
         if (yuvData != null) {
             // 如果队列中有YUV数据，那么开始处理
@@ -75,9 +78,17 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
     }
 
     // 开始编码
+    @OptIn(DelicateCoroutinesApi::class)
     fun start() {
         codec.start()
         isStarted = true
+        // 如果当前没有在执行encode函数，那么开始处理队列中的YUV数据
+
+        GlobalScope.launch {
+            while (isStarted) {
+                processQueue()
+            }
+        }
     }
 
     /**
@@ -87,50 +98,58 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
     输出缓冲区：这是编码后的数据（在这个例子中是H.264格式的视频数据）被放入的地方。当你调用codec.getOutputBuffer(outputBufferIndex)，你会得到一个包含编码后数据的ByteBuffer。然后，你可以使用get方法将编码后的数据从这个缓冲区中取出。
     这种使用缓冲区的方式可以有效地处理数据，因为它允许数据在被处理的同时进行读写操作，从而提高了数据处理的效率。
      */
-    private fun encode(input: ByteBuffer) {
-        isEncoding = true
+     fun encode(yuvBytes: ByteArray) {
         // 获取一个输入缓冲区的索引，如果没有可用的缓冲区，这个方法将返回一个负数
-        val inputBufferIndex = codec.dequeueInputBuffer(10000)
+        val inputBufferIndex = codec.dequeueInputBuffer(-1)
         if (inputBufferIndex < 0) {
-            isEncoding = false
             return
         }
         // 获取指定索引的输入缓冲区
         val inputBuffer = codec.getInputBuffer(inputBufferIndex)
+        if (inputBuffer == null) {
+            Log.e("Encoder", "getInputBuffer failed")
+            return
+        }
         // 将输入数据（即原始的YUV数据）放入输入缓冲区
-        inputBuffer?.put(input)
+        inputBuffer.clear()
+        inputBuffer.put(yuvBytes)
+        Log.w("Encoder", "input remaining: ${yuvBytes.size}")
+
         // 将填充了数据的输入缓冲区返回给编码器，编码器将在后台对这些数据进行编码
-        codec.queueInputBuffer(inputBufferIndex, 0, input.remaining(), System.nanoTime(), 0)
+        codec.queueInputBuffer(inputBufferIndex, 0, yuvBytes.size, System.nanoTime(), 0)
 
         // 创建一个BufferInfo对象，用于接收输出缓冲区的元数据
         val bufferInfo = MediaCodec.BufferInfo()
         // 获取一个包含编码后数据的输出缓冲区的索引
-        var outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 1000000)
+        var outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 40000)
         Log.w("Encoder", "outputBufferIndex: $outputBufferIndex")
-        while (outputBufferIndex >= 0) {
+        if (outputBufferIndex >= 0) {
             // 获取指定索引的输出缓冲区，这个缓冲区包含了编码后的数据
             val outputBuffer = codec.getOutputBuffer(outputBufferIndex)
-            // 将编码后的数据复制到output缓冲区
-            outputBuffer?.let {
-                //回调buffer
-                outputBufferCallback(it)
+            if (outputBuffer == null) {
+                Log.e("Encoder", "getOutputBuffer failed")
+                return
             }
+            // 将编码后的数据复制到output缓冲区
+            outputBufferCallback(outputBuffer)
             // 将已经读取了数据的输出缓冲区返回给编码器
             codec.releaseOutputBuffer(outputBufferIndex, false)
-            // 继续获取下一个包含编码后数据的输出缓冲区的索引，如果没有更多的缓冲区，这个方法将返回一个负数
-            outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 10000)
-        }
-        // 在encode函数的结束处，设置isEncoding为false，表示encode函数已经执行完毕
-        isEncoding = false
+//            outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, -1)
 
-        // encode函数执行完毕后，开始处理队列中的下一个YUV数据
-        processQueue()
+        }
+
+
     }
 
     // 停止编码
+    @OptIn(DelicateCoroutinesApi::class)
     fun stop() {
-        codec.stop()
         isStarted = false
+
+        GlobalScope.launch {
+            delay(1000L)  // 延迟1秒
+            codec.stop()
+        }
     }
 
     // 释放资源

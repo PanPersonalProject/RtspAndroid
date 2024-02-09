@@ -23,7 +23,6 @@ class VideoFileWriter(
     private val contentValues = ContentValues()
 
     private val fileName: String = "video.data"
-    private val mimeType: String = "video/mp4"
 
     init {
         createOutputStream()
@@ -33,7 +32,6 @@ class VideoFileWriter(
     private fun createOutputStream() {
         contentValues.apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
-            put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 put(MediaStore.MediaColumns.IS_PENDING, 1)
             }

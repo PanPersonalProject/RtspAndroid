@@ -24,6 +24,7 @@ import android.graphics.YuvImage;
 import android.util.Log;
 import android.util.Rational;
 import android.util.Size;
+import android.widget.ImageView;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
@@ -250,6 +251,19 @@ public final class ImageUtil {
             data = cropByteArray(data, image.getCropRect());
         }
         return data;
+    }
+
+
+    public static void displayNV21Image(byte[] nv21, int width, int height, ImageView imageView) {
+        // 将NV21图像转换为Bitmap
+        YuvImage yuvImage = new YuvImage(nv21, ImageFormat.NV21, width, height, null);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        yuvImage.compressToJpeg(new Rect(0, 0, width, height), 100, out);
+        byte[] imageBytes = out.toByteArray();
+        Bitmap bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+
+        // 将Bitmap设置到ImageView中
+        imageView.setImageBitmap(bitmap);
     }
 
     private static byte[] yuvImageToJpegByteArray(ImageProxy image) throws CodecFailedException {
