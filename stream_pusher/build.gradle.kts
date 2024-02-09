@@ -9,7 +9,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
 
         consumerProguardFiles("consumer-rules.pro")
         externalNativeBuild {
@@ -28,6 +28,15 @@ android {
             )
         }
     }
+    sourceSets {
+        getByName("debug") {
+            java.srcDirs(
+                "src/main/java",
+                "build/generated/data_binding_base_class_source_out/debug/out"
+            )
+        }
+    }
+
     externalNativeBuild {
         cmake {
             path("src/main/cpp/CMakeLists.txt")

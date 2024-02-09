@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "pan.project.fastrtsplive"
-        minSdk = 24
+        minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -26,6 +26,16 @@ android {
             )
         }
     }
+
+    sourceSets {
+        getByName("debug") {
+            java.srcDirs(
+                "src/main/java",
+                "build/generated/data_binding_base_class_source_out/debug/out"
+            )
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
