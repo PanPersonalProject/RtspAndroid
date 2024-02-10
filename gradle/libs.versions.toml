@@ -9,6 +9,7 @@ material = "1.11.0"
 constraintlayout = "2.1.4"
 permissionx = "1.7.1"
 minSdk = "29"
+activity = "1.8.0"
 
 [libraries]
 androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraxVersion" }
@@ -22,6 +23,7 @@ androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 permissionx = { module = "com.guolindev.permissionx:permissionx", version.ref = "permissionx" }
+androidx-activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

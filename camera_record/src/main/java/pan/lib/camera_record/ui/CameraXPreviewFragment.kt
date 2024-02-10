@@ -2,7 +2,6 @@ package pan.lib.camera_record.ui
 
 import android.Manifest
 import android.os.Bundle
-import android.util.Log
 import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
@@ -30,7 +29,7 @@ import java.util.concurrent.Executors
  * @author pan qi
  * @since 2024/2/3
  */
-class CameraPreviewFragment : Fragment() {
+class CameraXPreviewFragment : Fragment() {
 
     private var _binding: FragmentCameraPreviewBinding? = null
     private val binding get() = _binding!!
@@ -39,13 +38,15 @@ class CameraPreviewFragment : Fragment() {
 
     private lateinit var videoFileWriter: VideoFileWriter
 
-    private val encoder = Encoder {
-        Log.w("CameraPreviewFragment", "onNewYuvData: ${it.remaining()}")
-        it.rewind()
-        val array = ByteArray(it.remaining())
-        it.get(array)
-//        videoFileWriter.inputBytes(array)
-        context?.let { it1 -> FileUtil.writeBytesToFile(it1,array, "video.h264") }
+    private val encoder = Encoder {byteBuffer->
+        val data: ByteArray
+        if (byteBuffer.hasArray()) {
+            data = byteBuffer.array()
+        } else {
+            data = ByteArray(byteBuffer.remaining())
+            byteBuffer.get(data)
+        }
+        FileUtil.writeBytesToFile(requireContext(), data, "test.h264")
     }
 
     override fun onCreateView(
@@ -124,7 +125,7 @@ class CameraPreviewFragment : Fragment() {
         val width = displayMetrics.widthPixels
         val height = displayMetrics.heightPixels
 
-        encoder.init(requireContext(),1080, 720)
+        encoder.init(requireContext(),640, 480)
         encoder.start()
 
         val rotation = binding.prewview.display.rotation
@@ -147,6 +148,7 @@ class CameraPreviewFragment : Fragment() {
 //                imageProxy.height
 //            )
 //            val yuvBytes = ImageUtil.yuv_420_888toNv21(imageProxy)
+//            val yuv420888tonv12 = ConvertUtils.YUV_420_888toNV12(imageProxy, 0)
             val yuvBytes = YuvUtil.YUV_420_888toNV21(imageProxy.image)
 //            val yueBuffer = ByteBuffer.wrap(yuvBytes)
 //            context?.let { FileUtil.writeBytesToFile(it,yuvBytes, "yuv.data") }
@@ -178,8 +180,7 @@ class CameraPreviewFragment : Fragment() {
 
 
     override fun onDestroyView() {
-        encoder.stop()
-        encoder.release()
+
         super.onDestroyView()
         _binding = null
     }

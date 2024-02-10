@@ -12,6 +12,7 @@ object FileUtil {
         val fos = FileOutputStream(file, true) // true表示使用append模式
 
         fos.write(bytes)
+        fos.flush();
         fos.close()
     }
 }
