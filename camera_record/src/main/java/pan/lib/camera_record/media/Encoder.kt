@@ -11,8 +11,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.nio.ByteBuffer
-import java.util.concurrent.LinkedBlockingQueue
-import kotlin.concurrent.thread
 
 /**
  * 这个类的主要功能是将输入的YUV数据编码为H.264数据。
@@ -30,9 +28,6 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
 
     // MediaFormat用于配置MediaCodec
     private lateinit var format: MediaFormat
-
-    // 创建一个队列来存储待处理的YUV数据
-    private val queue = LinkedBlockingQueue<ByteArray>()
 
     private var context: Context? = null
     private var width = 0
@@ -101,7 +96,7 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
         // 获取一个包含编码后数据的输出缓冲区的索引
         var outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 12000)
         Log.w("Encoder", "outputBufferIndex: $outputBufferIndex")
-        if (outputBufferIndex >= 0) {
+        while (outputBufferIndex >= 0) {
             // 获取指定索引的输出缓冲区，这个缓冲区包含了编码后的数据
             val outputBuffer = codec.getOutputBuffer(outputBufferIndex)
             if (outputBuffer == null) {
@@ -112,6 +107,7 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
             outputBufferCallback(outputBuffer)
             // 将已经读取了数据的输出缓冲区返回给编码器
             codec.releaseOutputBuffer(outputBufferIndex, false)
+            outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 12000)
 
         }
 

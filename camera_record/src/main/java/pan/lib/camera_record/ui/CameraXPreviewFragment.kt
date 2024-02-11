@@ -12,6 +12,8 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
+import androidx.camera.core.resolutionselector.ResolutionSelector
+import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -19,10 +21,12 @@ import androidx.lifecycle.LifecycleOwner
 import com.google.common.util.concurrent.ListenableFuture
 import com.permissionx.guolindev.PermissionX
 import pan.lib.camera_record.databinding.FragmentCameraPreviewBinding
+import pan.lib.camera_record.media.BitmapUtils
 import pan.lib.camera_record.media.Encoder
 import pan.lib.camera_record.media.YuvUtil
 import pan.lib.camera_record.test.FileUtil
 import pan.lib.camera_record.test.VideoFileWriter
+import java.nio.ByteBuffer
 import java.util.concurrent.Executors
 
 /**
@@ -38,7 +42,8 @@ class CameraXPreviewFragment : Fragment() {
 
     private lateinit var videoFileWriter: VideoFileWriter
 
-    private val encoder = Encoder {byteBuffer->
+    private var isEncoderInitialized = false
+    private val encoder = Encoder { byteBuffer ->
         val data: ByteArray
         if (byteBuffer.hasArray()) {
             data = byteBuffer.array()
@@ -120,52 +125,50 @@ class CameraXPreviewFragment : Fragment() {
 
     @OptIn(ExperimentalGetImage::class)
     private fun startCameraPreview() {
-        val displayMetrics = resources.displayMetrics
-
-        val width = displayMetrics.widthPixels
-        val height = displayMetrics.heightPixels
-
-        encoder.init(requireContext(),640, 480)
-        encoder.start()
-
         val rotation = binding.prewview.display.rotation
+        val resolutionSelector = ResolutionSelector.Builder().setResolutionStrategy(
+            ResolutionStrategy(
+                Size(960, 1080),
+                ResolutionStrategy.FALLBACK_RULE_CLOSEST_LOWER
+            )
+        ).build()
 
         val imageAnalysis = ImageAnalysis.Builder()
             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
-            .setTargetRotation(rotation)
-            .setTargetResolution(Size(640, 480))
-            .setBackpressureStrategy(ImageAnalysis.STRATEGY_BLOCK_PRODUCER) // 非阻塞式，保留最新的图像
+//            .setTargetRotation(rotation)
+            .setResolutionSelector(resolutionSelector)
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST) // 非阻塞式，保留最新的图像
             .build()
 
 
         // 创建一个新的线程执行器，并设置为图像分析器的执行器。当有新的图像可用时，分析器的代码将在这个新的线程上执行。
         imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
-//            val yuvBytes = ByteArray(imageProxy.width * imageProxy.height * 3 / 2)
-//            YuvUtil.NV21ToNV12(
-//                YuvUtil.YUV_420_888toNV21(imageProxy.image),
-//                yuvBytes,
-//                imageProxy.width,
-//                imageProxy.height
-//            )
-//            val yuvBytes = ImageUtil.yuv_420_888toNv21(imageProxy)
-//            val yuv420888tonv12 = ConvertUtils.YUV_420_888toNV12(imageProxy, 0)
-            val yuvBytes = YuvUtil.YUV_420_888toNV21(imageProxy.image)
-//            val yueBuffer = ByteBuffer.wrap(yuvBytes)
-//            context?.let { FileUtil.writeBytesToFile(it,yuvBytes, "yuv.data") }
+            if (!isEncoderInitialized) {
+                encoder.init(requireContext(), imageProxy.width, imageProxy.height)
+                encoder.start()
+                isEncoderInitialized = true
+            }
+            val nv21 = YuvUtil.YUV_420_888toNV21(imageProxy.image)
+            val nv12 = ByteArray(imageProxy.width * imageProxy.height * 3 / 2)
 
-//            val bitmap = BitmapUtils.getBitmap(
-//                yueBuffer,
-//                imageProxy.width,
-//                imageProxy.height,
-//                imageProxy.imageInfo.rotationDegrees
-//            )
-////
-//            activity?.runOnUiThread {
-//                binding.myImageView.setImageBitmap(bitmap)
-//            }
+            YuvUtil.NV21ToNV12(
+                nv21,
+                nv12,
+                imageProxy.width,
+                imageProxy.height
+            )
 
-//            encoder.onNewYuvData(yuvBytes)
-            encoder.encode(yuvBytes)
+            val bitmap = BitmapUtils.getBitmap(
+                ByteBuffer.wrap(nv21),
+                imageProxy.width,
+                imageProxy.height,
+                imageProxy.imageInfo.rotationDegrees
+            )
+            activity?.runOnUiThread {
+                binding.myImageView.setImageBitmap(bitmap)
+            }
+
+            encoder.encode(nv12)
 
             imageProxy.close()
         }
