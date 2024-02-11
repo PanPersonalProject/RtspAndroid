@@ -150,7 +150,11 @@ class CameraXPreviewFragment : Fragment() {
             }
             val nv21 = YuvUtil.YUV_420_888toNV21(imageProxy.image)
             val rotateNV21Right90 =
-                YuvUtil.rotateYUV420Degree90(nv21, imageProxy.width, imageProxy.height)
+                if (lensFacing == CameraSelector.LENS_FACING_FRONT)
+                    YuvUtil.rotateYUV420Degree270(nv21, imageProxy.width, imageProxy.height)
+                else
+                    YuvUtil.rotateYUV420Degree90(nv21, imageProxy.width, imageProxy.height)
+
             val nv12 = ByteArray(imageProxy.width * imageProxy.height * 3 / 2)
 
             YuvUtil.NV21ToNV12(
@@ -185,7 +189,7 @@ class CameraXPreviewFragment : Fragment() {
 
 
     override fun onDestroyView() {
-
+        encoder.stop()
         super.onDestroyView()
         _binding = null
     }
