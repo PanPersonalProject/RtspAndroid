@@ -135,7 +135,7 @@ class CameraXPreviewFragment : Fragment() {
 
         val imageAnalysis = ImageAnalysis.Builder()
             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
-//            .setTargetRotation(rotation)
+            .setTargetRotation(rotation)
             .setResolutionSelector(resolutionSelector)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST) // 非阻塞式，保留最新的图像
             .build()
@@ -144,15 +144,17 @@ class CameraXPreviewFragment : Fragment() {
         // 创建一个新的线程执行器，并设置为图像分析器的执行器。当有新的图像可用时，分析器的代码将在这个新的线程上执行。
         imageAnalysis.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
             if (!isEncoderInitialized) {
-                encoder.init(requireContext(), imageProxy.width, imageProxy.height)
+                encoder.init(requireContext(), imageProxy.height, imageProxy.width)
                 encoder.start()
                 isEncoderInitialized = true
             }
             val nv21 = YuvUtil.YUV_420_888toNV21(imageProxy.image)
+            val rotateNV21Right90 =
+                YuvUtil.rotateYUV420Degree90(nv21, imageProxy.width, imageProxy.height)
             val nv12 = ByteArray(imageProxy.width * imageProxy.height * 3 / 2)
 
             YuvUtil.NV21ToNV12(
-                nv21,
+                rotateNV21Right90,
                 nv12,
                 imageProxy.width,
                 imageProxy.height
