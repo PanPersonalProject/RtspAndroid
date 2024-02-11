@@ -1,187 +1,108 @@
 package pan.lib.camera_record.ui
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.pm.PackageManager
+import android.Manifest
 import android.graphics.ImageFormat
 import android.hardware.Camera
 import android.hardware.Camera.PreviewCallback
-import android.media.MediaCodecList
 import android.os.Bundle
 import android.view.SurfaceHolder
-import android.view.SurfaceView
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import pan.lib.camera_record.R
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import com.permissionx.guolindev.PermissionX
+import pan.lib.camera_record.databinding.ActivityCameraBinding
 import pan.lib.camera_record.media.Encoder
 import pan.lib.camera_record.media.YuvUtil
 import pan.lib.camera_record.test.FileUtil.writeBytesToFile
-import java.io.IOException
 import java.nio.ByteBuffer
 
-
-class CameraPreviewActivity : Activity(), SurfaceHolder.Callback, PreviewCallback {
-    private var surfaceview: SurfaceView? = null
-
-    private var surfaceHolder: SurfaceHolder? = null
-
+class CameraPreviewActivity : AppCompatActivity(), PreviewCallback {
+    private lateinit var binding: ActivityCameraBinding
     private var camera: Camera? = null
-
-    private var parameters: Camera.Parameters? = null
-
-    var width: Int = 1080
-
-    var height: Int = 720
-
-
+    private var width: Int = 1080
+    private var height: Int = 720
     private var avcCodec: Encoder? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_camera)
-        surfaceview = findViewById(R.id.surfaceview)
-        SupportAvcCodec()
-        if (!checkPermissionAllGranted()) {
-            ActivityCompat.requestPermissions(
-                this@CameraPreviewActivity,
-                PERMISSIONS_STORAGE, CAMERA_OK
-            )
-        } else {
-            init()
-        }
+        binding = ActivityCameraBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+
+        PermissionX.init(this)
+            .permissions(Manifest.permission.CAMERA)
+            .request { allGranted, _, _ ->
+                if (allGranted) {
+                    init()
+                } else {
+                    Toast.makeText(this, "camera权限被拒", Toast.LENGTH_SHORT).show()
+                }
+            }
     }
+
 
     private fun init() {
-        surfaceHolder = surfaceview!!.holder
-        surfaceHolder?.addCallback(this)
-    }
+        binding.surfaceview.holder.addCallback(object : SurfaceHolder.Callback {
+            override fun surfaceCreated(holder: SurfaceHolder) {}
 
-
-    private fun checkPermissionAllGranted(): Boolean {
-        for (permission in PERMISSIONS_STORAGE) {
-            if (ContextCompat.checkSelfPermission(
-                    this,
-                    permission
-                ) != PackageManager.PERMISSION_GRANTED
+            override fun surfaceChanged(
+                holder: SurfaceHolder,
+                format: Int,
+                width: Int,
+                height: Int
             ) {
-                // 只要有一个权限没有被授予, 则直接返回 false
-                return false
-            }
-        }
-        return true
-    }
+                camera = backCamera
+                startCamera(camera)
 
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>,
-        grantResults: IntArray
-    ) {
-        if (requestCode == CAMERA_OK) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                //这里已经获取到了摄像头的权限，想干嘛干嘛了可以
-                init()
-            }
-        }
-    }
-
-
-    override fun surfaceCreated(holder: SurfaceHolder) {
-    }
-
-    override fun surfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
-        camera = backCamera
-        startCamera(camera)
-        avcCodec = Encoder { byteBuffer: ByteBuffer ->
-            val data: ByteArray
-            if (byteBuffer.hasArray()) {
-                data = byteBuffer.array()
-            } else {
-                data = ByteArray(byteBuffer.remaining())
-                byteBuffer[data]
             }
 
-            writeBytesToFile(this, data, "test.h264")
-        }
-        avcCodec!!.init(this, this.width, this.height)
-        avcCodec!!.start()
-    }
-
-    override fun surfaceDestroyed(holder: SurfaceHolder) {
-        if (null != camera) {
-            camera!!.setPreviewCallback(null)
-            camera!!.stopPreview()
-            camera!!.release()
-            camera = null
-            avcCodec!!.stop()
-        }
-    }
-
-
-    override fun onPreviewFrame(data: ByteArray, camera: Camera) {
-        val yuv420sp = ByteArray(width * height * 3 / 2)
-        YuvUtil.NV21ToNV12(data, yuv420sp, width, height)
-        avcCodec!!.encode(yuv420sp)
-    }
-
-
-    @SuppressLint("NewApi")
-    private fun SupportAvcCodec(): Boolean {
-        for (j in MediaCodecList.getCodecCount() - 1 downTo 0) {
-            val codecInfo = MediaCodecList.getCodecInfoAt(j)
-
-            val types = codecInfo.supportedTypes
-            for (type in types) {
-                if (type.equals("video/avc", ignoreCase = true)) {
-                    return true
+            override fun surfaceDestroyed(holder: SurfaceHolder) {
+                camera?.apply {
+                    setPreviewCallback(null)
+                    stopPreview()
+                    release()
                 }
+                avcCodec?.stop()
             }
-        }
-        return false
-    }
-
-
-    private fun startCamera(mCamera: Camera?) {
-        if (mCamera != null) {
-            try {
-                mCamera.setPreviewCallback(this)
-                mCamera.setDisplayOrientation(90)
-                if (parameters == null) {
-                    parameters = mCamera.parameters
-                }
-                parameters = mCamera.parameters
-                parameters?.setPreviewFormat(ImageFormat.NV21)
-
-                val supportedPreviewSizes = parameters?.getSupportedPreviewSizes()
-
-                width = supportedPreviewSizes?.get(0)?.width!!
-                height = supportedPreviewSizes[0]?.height!!
-                parameters?.setPreviewSize(width, height)
-
-                mCamera.parameters = parameters
-                mCamera.setPreviewDisplay(surfaceHolder)
-                mCamera.startPreview()
-            } catch (ignored: IOException) {
-            }
-        }
+        })
     }
 
     private val backCamera: Camera?
-        get() {
-            var c: Camera? = null
-            try {
-                c = Camera.open(0)
-            } catch (ignored: Exception) {
-            }
-            return c
+        get() = try {
+            Camera.open(0)
+        } catch (ignored: Exception) {
+            null
         }
 
-
-    companion object {
-        private const val CAMERA_OK = 10001
-        private val PERMISSIONS_STORAGE = arrayOf(
-            "android.permission.CAMERA",
-            "android.permission.WRITE_EXTERNAL_STORAGE"
+    private fun startCamera(mCamera: Camera?) {
+        mCamera?.apply {
+            setPreviewCallback(this@CameraPreviewActivity)
+            setDisplayOrientation(90)
+            parameters = parameters.apply {
+                setPreviewFormat(ImageFormat.NV21)
+                val supportedPreviewSizes = getSupportedPreviewSizes()
+                width = supportedPreviewSizes[0].width
+                height = supportedPreviewSizes[0].height
+                setPreviewSize(width, height)
+            }
+            setPreviewDisplay(binding.surfaceview.holder)
+            startPreview()
+        }
+        avcCodec = Encoder { byteBuffer: ByteBuffer ->
+            val data = ByteArray(byteBuffer.remaining()).also { byteBuffer.get(it) }
+            writeBytesToFile(this@CameraPreviewActivity, data, "test.h264")
+        }
+        avcCodec?.init(
+            this@CameraPreviewActivity,
+            this@CameraPreviewActivity.width,
+            this@CameraPreviewActivity.height
         )
+        avcCodec?.start()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onPreviewFrame(data: ByteArray, camera: Camera) {
+        val yuv420sp = ByteArray(width * height * 3 / 2)
+        YuvUtil.NV21ToNV12(data, yuv420sp, width, height)
+        avcCodec?.encode(yuv420sp)
     }
 }
