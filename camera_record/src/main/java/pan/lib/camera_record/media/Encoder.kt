@@ -72,6 +72,9 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
     这种使用缓冲区的方式可以有效地处理数据，因为它允许数据在被处理的同时进行读写操作，从而提高了数据处理的效率。
      */
     fun encode(yuvBytes: ByteArray) {
+        if (!isStarted) {
+            return
+        }
         // 获取一个输入缓冲区的索引，如果没有可用的缓冲区，这个方法将返回一个负数
         val inputBufferIndex = codec.dequeueInputBuffer(-1)
         if (inputBufferIndex < 0) {
@@ -123,12 +126,8 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
         GlobalScope.launch {
             delay(1000L)  // 延迟1秒
             codec.stop()
+            codec.release()
         }
-    }
-
-    // 释放资源
-    fun release() {
-        codec.release()
     }
 
 }
