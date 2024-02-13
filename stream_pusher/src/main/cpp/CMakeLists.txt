@@ -25,8 +25,16 @@ project("stream_pusher")
 # for GameActivity/NativeActivity derived applications, the same library name must be
 # used in the AndroidManifest.xml file.
 
+#定义了NO_OPENSSL这个宏。TLSState.hh不会包含任何和OpenSSL相关的成员函数和成员变量
+add_definitions(-DNO_OPENSSL)
+
 include_directories(
-        ${CMAKE_CURRENT_SOURCE_DIR}/live555/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/include/BasicUsageEnvironment
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/include/groupsock
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/include/liveMedia
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/include/UsageEnvironment
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/src/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/Base/include
 )
 
 add_library(
@@ -81,6 +89,8 @@ add_library(
         ${CMAKE_PROJECT_NAME}
         SHARED
         stream_pusher.cpp
+        live555/src/testH264VideoStreamer.cpp
+        live555/src/announceURL.cpp
 )
 
 target_link_libraries(

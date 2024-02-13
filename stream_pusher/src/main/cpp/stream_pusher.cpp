@@ -1,10 +1,10 @@
 #include <jni.h>
 #include <string>
+#include "testH264VideoStreamer.h"
 
-extern "C" JNIEXPORT jstring JNICALL
-Java_pan_project_stream_1pusher_NativeLib_stringFromJNI(
+extern "C" JNIEXPORT void JNICALL
+Java_pan_project_stream_1pusher_StreamPushLib_startRtspServer(
         JNIEnv* env,
         jobject /* this */) {
-    std::string hello = "Hello from C++";
-    return env->NewStringUTF(hello.c_str());
+    startRtspServer();
 }
