@@ -28,6 +28,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 
 #include <BasicUsageEnvironment.hh>
 #include "include/announceURL.hh"
+#include "../../Base/include/AndroidLog.h"
 #include <GroupsockHelper.hh>
 
 UsageEnvironment* env;
@@ -81,8 +82,8 @@ void startRtspServer() {
 
     RTSPServer* rtspServer = RTSPServer::createNew(*env, 8554);
     if (rtspServer == NULL) {
-        *env << "Failed to create RTSP server: " << env->getResultMsg() << "\n";
-        exit(1);
+        LOGE("Unable to open file \"%s\" as a byte-stream file source", inputFileName);
+        return;
     }
     ServerMediaSession* sms
             = ServerMediaSession::createNew(*env, "testStream", inputFileName,
@@ -93,7 +94,7 @@ void startRtspServer() {
     announceURL(rtspServer, sms);
 
     // Start the streaming:
-    *env << "Beginning streaming...\n";
+    LOGI("Beginning streaming...\n");
     play();
 
     env->taskScheduler().doEventLoop(); // does not return
@@ -101,7 +102,7 @@ void startRtspServer() {
 }
 
 void afterPlaying(void* /*clientData*/) {
-    *env << "...done reading from file\n";
+    LOGI("...done reading from file\n");
     videoSink->stopPlaying();
     Medium::close(videoSource);
     // Note that this also closes the input file that this source read from.
@@ -115,9 +116,8 @@ void play() {
     ByteStreamFileSource* fileSource
             = ByteStreamFileSource::createNew(*env, inputFileName);
     if (fileSource == NULL) {
-        *env << "Unable to open file \"" << inputFileName
-             << "\" as a byte-stream file source\n";
-        exit(1);
+        LOGE("Unable to open file \"%s\" as a byte-stream file source", inputFileName);
+        return;
     }
 
     FramedSource* videoES = fileSource;
@@ -126,6 +126,6 @@ void play() {
     videoSource = H264VideoStreamFramer::createNew(*env, videoES);
 
     // Finally, start playing:
-    *env << "Beginning to read from file...\n";
+    LOGI("Beginning to read from file...\n");
     videoSink->startPlaying(*videoSource, afterPlaying, videoSink);
 }

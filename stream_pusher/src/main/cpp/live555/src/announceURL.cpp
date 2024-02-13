@@ -19,24 +19,25 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Implementation
 
 #include "include/announceURL.hh"
+#include "../../Base/include/AndroidLog.h"
 #include <GroupsockHelper.hh> // for "weHaveAnIPv*Address()"
 
-void announceURL(RTSPServer* rtspServer, ServerMediaSession* sms) {
-  if (rtspServer == NULL || sms == NULL) return; // sanity check
+void announceURL(RTSPServer *rtspServer, ServerMediaSession *sms) {
+    if (rtspServer == NULL || sms == NULL) return; // sanity check
 
-  UsageEnvironment& env = rtspServer->envir();
+    UsageEnvironment &env = rtspServer->envir();
 
-  env << "Play this stream using the URL ";
-  if (weHaveAnIPv4Address(env)) {
-    char* url = rtspServer->ipv4rtspURL(sms);
-    env << "\"" << url << "\"";
-    delete[] url;
-    if (weHaveAnIPv6Address(env)) env << " or ";
-  }
-  if (weHaveAnIPv6Address(env)) {
-    char* url = rtspServer->ipv6rtspURL(sms);
-    env << "\"" << url << "\"";
-    delete[] url;
-  }
-  env << "\n";
+    LOGI("Play this stream using the URL ");
+    if (weHaveAnIPv4Address(env)) {
+        char *url = rtspServer->ipv4rtspURL(sms);
+        LOGI("\"%s\"", url);
+        delete[] url;
+        if (weHaveAnIPv6Address(env)) LOGI(" or ");
+    }
+    if (weHaveAnIPv6Address(env)) {
+        char *url = rtspServer->ipv6rtspURL(sms);
+        LOGI("\"%s\"", url);
+        delete[] url;
+    }
+    LOGI("\n");
 }
