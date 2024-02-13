@@ -11,6 +11,11 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
 
         consumerProguardFiles("consumer-rules.pro")
+
+        ndk {
+            abiFilters.add("arm64-v8a")
+        }
+
         externalNativeBuild {
             cmake {
                 cppFlags("")
@@ -68,6 +73,6 @@ dependencies {
     implementation(libs.androidx.camera.video)
     implementation(libs.androidx.camera.view)
     implementation(libs.androidx.camera.extensions)
-    implementation (libs.permissionx)
+    implementation(libs.permissionx)
 
 }

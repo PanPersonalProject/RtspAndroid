@@ -12,9 +12,15 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
 
         consumerProguardFiles("consumer-rules.pro")
+
+        ndk {
+            abiFilters.add("arm64-v8a")
+        }
+
         externalNativeBuild {
             cmake {
                 cppFlags("")
+                arguments("-DANDROID_ABI=arm64-v8a")
             }
         }
     }

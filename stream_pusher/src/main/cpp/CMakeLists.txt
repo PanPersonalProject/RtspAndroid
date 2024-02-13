@@ -24,14 +24,71 @@ project("stream_pusher")
 # System.loadLibrary() and pass the name of the library defined here;
 # for GameActivity/NativeActivity derived applications, the same library name must be
 # used in the AndroidManifest.xml file.
-add_library(${CMAKE_PROJECT_NAME} SHARED
-        # List C/C++ source files with relative paths to this CMakeLists.txt.
-        stream_pusher.cpp)
 
-# Specifies libraries CMake should link to your target library. You
-# can link libraries from various origins, such as libraries defined in this
-# build script, prebuilt third-party libraries, or Android system libraries.
-target_link_libraries(${CMAKE_PROJECT_NAME}
-        # List libraries link to the target library
+include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/include
+)
+
+add_library(
+        BasicUsageEnvironment
+        STATIC
+        IMPORTED
+)
+set_target_properties(
+        BasicUsageEnvironment
+        PROPERTIES
+        IMPORTED_LOCATION
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/lib/${ANDROID_ABI}/libBasicUsageEnvironment.a
+)
+
+add_library(
+        groupsock
+        STATIC
+        IMPORTED
+)
+set_target_properties(
+        groupsock
+        PROPERTIES
+        IMPORTED_LOCATION
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/lib/${ANDROID_ABI}/libgroupsock.a
+)
+
+add_library(
+        liveMedia
+        STATIC
+        IMPORTED
+)
+set_target_properties(
+        liveMedia
+        PROPERTIES
+        IMPORTED_LOCATION
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/lib/${ANDROID_ABI}/libliveMedia.a
+)
+
+add_library(
+        UsageEnvironment
+        STATIC
+        IMPORTED
+)
+set_target_properties(
+        UsageEnvironment
+        PROPERTIES
+        IMPORTED_LOCATION
+        ${CMAKE_CURRENT_SOURCE_DIR}/live555/lib/${ANDROID_ABI}/libUsageEnvironment.a
+)
+
+add_library(
+        ${CMAKE_PROJECT_NAME}
+        SHARED
+        stream_pusher.cpp
+)
+
+target_link_libraries(
+        ${CMAKE_PROJECT_NAME}
         android
-        log)
+        log
+        BasicUsageEnvironment
+        groupsock
+        liveMedia
+        UsageEnvironment
+)
