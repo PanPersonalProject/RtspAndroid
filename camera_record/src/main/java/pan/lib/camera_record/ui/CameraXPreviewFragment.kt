@@ -41,6 +41,7 @@ class CameraXPreviewFragment : Fragment() {
     private var lensFacing: Int = CameraSelector.LENS_FACING_BACK
 
     private lateinit var videoFileWriter: VideoFileWriter
+    private var outputBytesCallback: ((ByteArray) -> Unit)? = null
 
     private var isEncoderInitialized = false
     private val encoder = Encoder { byteBuffer ->
@@ -51,7 +52,11 @@ class CameraXPreviewFragment : Fragment() {
             data = ByteArray(byteBuffer.remaining())
             byteBuffer.get(data)
         }
-        FileUtil.writeBytesToFile(requireContext(), data, "test.h264")
+        outputBytesCallback?.invoke(data)
+    }
+
+    fun setOutputBufferCallback(callback: (ByteArray) -> Unit) {
+        outputBytesCallback = callback
     }
 
     override fun onCreateView(
