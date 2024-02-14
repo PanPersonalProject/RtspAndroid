@@ -33,11 +33,22 @@ void announceURL(RTSPServer *rtspServer, ServerMediaSession *sms) {
         LOGI("\"%s\"", url);
         delete[] url;
         if (weHaveAnIPv6Address(env)) LOGI(" or ");
+    }else{
+        LOGI(" not weHaveAnIPv4Address ");
     }
+
     if (weHaveAnIPv6Address(env)) {
         char *url = rtspServer->ipv6rtspURL(sms);
         LOGI("\"%s\"", url);
         delete[] url;
+    }else{
+        LOGI(" not weHaveAnIPv6Address ");
     }
+
+
+    char *url = rtspServer->ipv4rtspURL(sms);
+    LOGI("\"%s\"", url);
+    delete[] url;
+    if (weHaveAnIPv6Address(env)) LOGI(" or ");
     LOGI("\n");
 }

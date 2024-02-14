@@ -82,7 +82,7 @@ void startRtspServer() {
 
     RTSPServer* rtspServer = RTSPServer::createNew(*env, 8554);
     if (rtspServer == NULL) {
-        LOGE("Unable to open file \"%s\" as a byte-stream file source", inputFileName);
+        LOGE("Failed to create RTSP server: %s", env->getResultMsg());
         return;
     }
     ServerMediaSession* sms

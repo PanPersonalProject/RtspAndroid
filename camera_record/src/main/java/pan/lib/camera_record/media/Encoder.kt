@@ -89,7 +89,7 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
         // 将输入数据（即原始的YUV数据）放入输入缓冲区
         inputBuffer.clear()
         inputBuffer.put(yuvBytes)
-        Log.w("Encoder", "input remaining: ${yuvBytes.size}")
+//        Log.w("Encoder", "input remaining: ${yuvBytes.size}")
 
         // 将填充了数据的输入缓冲区返回给编码器，编码器将在后台对这些数据进行编码
         codec.queueInputBuffer(inputBufferIndex, 0, yuvBytes.size, System.nanoTime(), 0)
@@ -98,7 +98,7 @@ class Encoder(private val outputBufferCallback: (ByteBuffer) -> Unit) {
         val bufferInfo = MediaCodec.BufferInfo()
         // 获取一个包含编码后数据的输出缓冲区的索引
         var outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, 12000)
-        Log.w("Encoder", "outputBufferIndex: $outputBufferIndex")
+//        Log.w("Encoder", "outputBufferIndex: $outputBufferIndex")
         while (outputBufferIndex >= 0) {
             // 获取指定索引的输出缓冲区，这个缓冲区包含了编码后的数据
             val outputBuffer = codec.getOutputBuffer(outputBufferIndex)
