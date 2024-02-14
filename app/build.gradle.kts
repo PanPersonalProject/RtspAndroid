@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
+
+    implementation(libs.permissionx)
     implementation(project(":camera_record"))
     implementation(project(":stream_pusher"))
 }
