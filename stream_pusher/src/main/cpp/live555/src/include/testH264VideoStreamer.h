@@ -11,7 +11,7 @@
 #include <GroupsockHelper.hh>
 
 // Function declarations
-void startRtspServer();
+void startRtspServer(const char *string, jint i);
 void play();
 
 #endif // TEST_H264_VIDEO_STREAMER_H

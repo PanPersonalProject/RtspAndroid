@@ -25,6 +25,6 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include "liveMedia.hh"
 #endif
 
-void announceURL(RTSPServer* rtspServer, ServerMediaSession* sms);
+void printRtspUrl(const char *ip, int port, const char *streamName);
 
 #endif

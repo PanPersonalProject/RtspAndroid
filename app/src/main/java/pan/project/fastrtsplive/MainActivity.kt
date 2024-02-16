@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity() {
                 if (allGranted) {
                     lifecycleScope.launch(Dispatchers.IO) {
                         StreamPushLib.setFilePath(filesDir.absolutePath + "/test.h264")
-                        StreamPushLib.startRtspServer()
+                        StreamPushLib.startRtspServer(this@MainActivity)
                     }
                 } else {
                     Toast.makeText(this, "STORAGE权限被拒", Toast.LENGTH_SHORT).show()

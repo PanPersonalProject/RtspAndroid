@@ -38,7 +38,8 @@ RTPSink* videoSink;
 
 void play(); // forward
 
-void startRtspServer() {
+
+void startRtspServer(const char *ip, int port) {
     // Begin by setting up our usage environment:
     TaskScheduler* scheduler = BasicTaskScheduler::createNew();
     env = BasicUsageEnvironment::createNew(*scheduler);
@@ -80,7 +81,7 @@ void startRtspServer() {
                                       True /* we're a SSM source */);
     // Note: This starts RTCP running automatically
 
-    RTSPServer* rtspServer = RTSPServer::createNew(*env, 8554);
+    RTSPServer* rtspServer = RTSPServer::createNew(*env, port);
     if (rtspServer == NULL) {
         LOGE("Failed to create RTSP server: %s", env->getResultMsg());
         return;
@@ -91,9 +92,7 @@ void startRtspServer() {
                                             True /*SSM*/);
     sms->addSubsession(PassiveServerMediaSubsession::createNew(*videoSink, rtcp));
     rtspServer->addServerMediaSession(sms);
-    announceURL(rtspServer, sms);
-
-    // Start the streaming:
+    printRtspUrl(ip, port, "testStream");
     LOGI("Beginning streaming...\n");
     play();
 

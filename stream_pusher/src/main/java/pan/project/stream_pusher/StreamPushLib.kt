@@ -1,5 +1,8 @@
 package pan.project.stream_pusher
 
+import android.content.Context
+import android.util.Log
+
 class StreamPushLib {
 
     /**
@@ -9,7 +12,14 @@ class StreamPushLib {
 
     companion object {
         // Used to load the 'stream_pusher' library on application startup.
-        external fun startRtspServer()
+        fun startRtspServer(context: Context) {
+            val ip = NetUtil.getIp(context)
+            val port = NetUtil.getAvailablePort(8554)
+            Log.d("stream_pusher", "init: ip = $ip, port = $port")
+            startRtspServer(ip, port)
+        }
+
+        private external fun startRtspServer(ip: String, port: Int)
         external fun setFilePath(filePath: String)
 
         init {

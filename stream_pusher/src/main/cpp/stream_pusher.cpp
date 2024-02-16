@@ -6,9 +6,12 @@
 extern "C"
 JNIEXPORT void JNICALL
 Java_pan_project_stream_1pusher_StreamPushLib_00024Companion_startRtspServer(JNIEnv *env,
-                                                                             jobject thiz) {
-    startRtspServer();
+                                                                             jobject thiz,
+                                                                             jstring ip,
+                                                                             jint port) {
+    const char *nativeIp = env->GetStringUTFChars(ip, JNI_FALSE);
 
+    startRtspServer(nativeIp, port);
 }
 
 extern char const *inputFileName;
