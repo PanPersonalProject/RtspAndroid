@@ -10,8 +10,8 @@ Java_pan_project_stream_1pusher_StreamPushLib_00024Companion_startRtspServer(JNI
                                                                              jstring ip,
                                                                              jint port) {
     const char *nativeIp = env->GetStringUTFChars(ip, JNI_FALSE);
-
     startRtspServer(nativeIp, port);
+    env->ReleaseStringUTFChars(ip, nativeIp);
 }
 
 extern char const *inputFileName;
