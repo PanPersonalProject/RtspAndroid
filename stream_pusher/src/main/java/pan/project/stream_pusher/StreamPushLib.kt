@@ -2,6 +2,7 @@ package pan.project.stream_pusher
 
 import android.content.Context
 import android.util.Log
+import java.util.concurrent.ArrayBlockingQueue
 
 class StreamPushLib {
 
@@ -11,6 +12,7 @@ class StreamPushLib {
      */
 
     companion object {
+
         // Used to load the 'stream_pusher' library on application startup.
         fun startRtspServer(context: Context) {
             val ip = NetUtil.getIp(context)
@@ -19,8 +21,23 @@ class StreamPushLib {
             startRtspServer(ip, port)
         }
 
+
+        var queue: ArrayBlockingQueue<ByteArray>? = null
+
+        @JvmStatic
+        fun getFrame(): ByteArray {
+            var take = ByteArray(0)
+            try {
+                take = queue!!.take()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            return take
+        }
         private external fun startRtspServer(ip: String, port: Int)
         external fun setFilePath(filePath: String)
+        external fun sendH264Frame(array: ByteArray)
+
 
         init {
             System.loadLibrary("stream_pusher")

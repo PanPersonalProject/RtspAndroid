@@ -89,8 +89,14 @@ add_library(
         ${CMAKE_PROJECT_NAME}
         SHARED
         stream_pusher.cpp
+        Base/src/AndroidLog.cpp
         live555/src/testH264VideoStreamer.cpp
         live555/src/announceURL.cpp
+        live555/src/WW_H264VideoServerMediaSubsession.cpp
+        live555/src/WW_H264VideoSource.cpp
+        live555/src/RTSPStream.cpp
+        live555/src/live555MediaServer.cpp
+        live555/src/CameraSource.cpp
 )
 
 target_link_libraries(

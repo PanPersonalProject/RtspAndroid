@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.wifi.WifiInfo
+import android.os.Handler
+import android.os.Looper
 import android.text.format.Formatter
 import android.util.Log
 import android.widget.Toast
@@ -42,7 +44,9 @@ object NetUtil {
                     if (transportInfo is WifiInfo) {
                         wifiIp = Formatter.formatIpAddress(transportInfo.ipAddress)
                     } else if (transportInfo.javaClass.toString().contains("VpnTransportInfo")) {
-                        Toast.makeText(context, "获取ip失败，请关闭vpn", Toast.LENGTH_SHORT).show()
+                        Handler(Looper.getMainLooper()).post {
+                            Toast.makeText(context, "获取ip失败，请关闭vpn", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }

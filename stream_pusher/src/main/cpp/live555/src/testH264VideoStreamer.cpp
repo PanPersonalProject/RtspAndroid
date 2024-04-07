@@ -29,6 +29,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 #include <BasicUsageEnvironment.hh>
 #include "include/announceURL.hh"
 #include "../../Base/include/AndroidLog.h"
+#include "CameraSource.h"
 #include <GroupsockHelper.hh>
 
 UsageEnvironment* env;
@@ -111,20 +112,21 @@ void afterPlaying(void* /*clientData*/) {
 }
 
 void play() {
-    // Open the input file as a 'byte-stream file source':
-    ByteStreamFileSource* fileSource
-            = ByteStreamFileSource::createNew(*env, inputFileName);
-    if (fileSource == NULL) {
-        LOGE("Unable to open file \"%s\" as a byte-stream file source", inputFileName);
-        return;
+    CameraSource* devSource
+            = CameraSource::createNew(*env);
+    if (devSource == NULL)
+    {
+
+        LOGE("Unable to open source");
+        exit(1);
     }
 
-    FramedSource* videoES = fileSource;
+    FramedSource* videoES = devSource;
 
     // Create a framer for the Video Elementary Stream:
     videoSource = H264VideoStreamFramer::createNew(*env, videoES);
 
     // Finally, start playing:
-    LOGI("Beginning to read from file...\n");
+    LOGV("Beginning to read from camera...");
     videoSink->startPlaying(*videoSource, afterPlaying, videoSink);
 }

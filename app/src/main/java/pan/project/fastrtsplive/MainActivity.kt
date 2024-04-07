@@ -8,8 +8,10 @@ import androidx.lifecycle.lifecycleScope
 import com.permissionx.guolindev.PermissionX
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import pan.lib.camera_record.ui.CameraXPreviewFragment
 import pan.project.fastrtsplive.databinding.ActivityMainBinding
 import pan.project.stream_pusher.StreamPushLib
+import java.util.concurrent.ArrayBlockingQueue
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,19 +23,24 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-//        val fragment = supportFragmentManager.findFragmentById(R.id.fragment) as CameraXPreviewFragment
-//        fragment.setOutputBufferCallback {bytes->
-//            // 在这里处理ByteBuffer
+        val fragment =
+            supportFragmentManager.findFragmentById(R.id.fragment) as CameraXPreviewFragment
+        val queue: ArrayBlockingQueue<ByteArray> =ArrayBlockingQueue(1000)
+        StreamPushLib.queue=queue
+        fragment.setOutputBufferCallback { bytes ->
+            // 在这里处理ByteBuffer
+            queue.put(bytes)
+//            StreamPushLib.sendH264Frame(bytes)
 //            FileUtil.writeBytesToFile(this, bytes, "test.h264")
-//
-//        }
+//            Log.e("TAG", bytes.joinToString ())
+        }
         startRtspServer()
 
     }
 
     private fun startRtspServer() {
         PermissionX.init(this)
-            .permissions(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            .permissions(Manifest.permission.CAMERA,Manifest.permission.WRITE_EXTERNAL_STORAGE)
             .onExplainRequestReason { scope, deniedList ->
                 scope.showRequestReasonDialog(
                     deniedList,
@@ -53,7 +60,7 @@ class MainActivity : AppCompatActivity() {
             .request { allGranted, _, _ ->
                 if (allGranted) {
                     lifecycleScope.launch(Dispatchers.IO) {
-                        StreamPushLib.setFilePath(filesDir.absolutePath + "/test.h264")
+//                        StreamPushLib.setFilePath(filesDir.absolutePath + "/test.h264")
                         StreamPushLib.startRtspServer(this@MainActivity)
                     }
                 } else {
