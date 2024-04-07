@@ -91,6 +91,7 @@ add_library(
         stream_pusher.cpp
         Base/src/AndroidLog.cpp
         live555/src/testH264VideoStreamer.cpp
+        live555/src/testH264VideoStreamerByFile.cpp
         live555/src/announceURL.cpp
         live555/src/WW_H264VideoServerMediaSubsession.cpp
         live555/src/WW_H264VideoSource.cpp
