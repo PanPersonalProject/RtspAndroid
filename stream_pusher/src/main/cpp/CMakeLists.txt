@@ -10,6 +10,16 @@ cmake_minimum_required(VERSION 3.22.1)
 # with ${CMAKE_PROJECT_NAME} (both CMake variables are in-sync within the top level
 # build script scope).
 project("stream_pusher")
+include(FetchContent)
+
+
+FetchContent_Declare(
+        readerwriterqueue
+        GIT_REPOSITORY    https://github.com/cameron314/readerwriterqueue
+        GIT_TAG           master
+)
+
+FetchContent_MakeAvailable(readerwriterqueue)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -91,21 +101,23 @@ add_library(
         stream_pusher.cpp
         Base/src/AndroidLog.cpp
         live555/src/testH264VideoStreamer.cpp
-        live555/src/testH264VideoStreamerByFile.cpp
         live555/src/announceURL.cpp
         live555/src/WW_H264VideoServerMediaSubsession.cpp
         live555/src/WW_H264VideoSource.cpp
-        live555/src/RTSPStream.cpp
         live555/src/live555MediaServer.cpp
         live555/src/CameraSource.cpp
+        live555/src/ByteBuffer.cpp
+        live555/src/MediaData.cpp
 )
 
 target_link_libraries(
         ${CMAKE_PROJECT_NAME}
+        PUBLIC
         android
         log
         BasicUsageEnvironment
         groupsock
         liveMedia
         UsageEnvironment
+        readerwriterqueue
 )

@@ -6,8 +6,6 @@
 #include "CameraSource.h"
 //CameraSource.cpp
 #include "GroupsockHelper.hh" // for "gettimeofday()"
-static int8_t buf[8192*30];
-static int count = 0;
 CameraSource*
 CameraSource::createNew(UsageEnvironment& env) {
     return new CameraSource(env);
@@ -39,19 +37,21 @@ CameraSource::~CameraSource() {
 }
 
 void CameraSource::doGetNextFrame() {
-    count = getNextFrame(buf);
-    deliverFrame();
+    MediaData mediaData=getNextFrame();
+    deliverFrame(mediaData);
 }
 
 void CameraSource::deliverFrame0(void* clientData) {
-    ((CameraSource*)clientData)->deliverFrame();
+    ((CameraSource *) clientData)->deliverFrame(MediaData());
 }
 
-void CameraSource::deliverFrame() {
+void CameraSource::deliverFrame(MediaData data) {
     if (!isCurrentlyAwaitingData()) return; // we're not ready for the data yet
 
-    u_int8_t* newFrameDataStart = (u_int8_t*)buf; //%%% TO BE WRITTEN %%%
-    unsigned newFrameSize = static_cast<unsigned int>(count); //%%% TO BE WRITTEN %%%
+
+
+    u_int8_t* newFrameDataStart = data.getFrameBytes();
+    unsigned newFrameSize =data.getFrameSize();
 
     // Deliver the data here:
     if (newFrameSize > fMaxSize) {

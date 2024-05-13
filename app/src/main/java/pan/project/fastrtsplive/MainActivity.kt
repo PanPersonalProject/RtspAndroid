@@ -25,12 +25,10 @@ class MainActivity : AppCompatActivity() {
 
         val fragment =
             supportFragmentManager.findFragmentById(R.id.fragment) as CameraXPreviewFragment
-        val queue: ArrayBlockingQueue<ByteArray> =ArrayBlockingQueue(1000)
-        StreamPushLib.queue=queue
+
         fragment.setOutputBufferCallback { bytes ->
-            // 在这里处理ByteBuffer
-            queue.put(bytes)
-//            StreamPushLib.sendH264Frame(bytes)
+            // 在这里处理ByteBuffer]
+            StreamPushLib.sendH264Frame(bytes)
 //            FileUtil.writeBytesToFile(this, bytes, "test.h264")
 //            Log.e("TAG", bytes.joinToString ())
         }

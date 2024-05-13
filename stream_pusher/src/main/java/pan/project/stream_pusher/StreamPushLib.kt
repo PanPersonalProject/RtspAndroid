@@ -22,18 +22,6 @@ class StreamPushLib {
         }
 
 
-        var queue: ArrayBlockingQueue<ByteArray>? = null
-
-        @JvmStatic
-        fun getFrame(): ByteArray {
-            var take = ByteArray(0)
-            try {
-                take = queue!!.take()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-            return take
-        }
         private external fun startRtspServer(ip: String, port: Int)
         external fun setFilePath(filePath: String)
         external fun sendH264Frame(array: ByteArray)

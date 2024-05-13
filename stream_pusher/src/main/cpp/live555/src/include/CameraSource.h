@@ -4,14 +4,11 @@
  * Description: Add a brief description of the file here.
  ******************************************************************************************/
 //CameraSource.hh
-#ifndef _DEVICE_SOURCE1_HH
-#define _DEVICE_SOURCE1_HH
-
-#ifndef _FRAMED_SOURCE_HH
-
+#pragma once
 #include <jni.h>
 #include "FramedSource.hh"
-#endif
+#include "MediaData.h"
+
 
 class CameraSource: public FramedSource {
 public:
@@ -31,15 +28,14 @@ protected:
 private:
     // redefined virtual functions:
     virtual void doGetNextFrame();
-    virtual int getNextFrame(int8_t* buf);
+    virtual MediaData getNextFrame();
     //virtual void doStopGettingFrames(); // optional
 
 private:
     static void deliverFrame0(void* clientData);
-    void deliverFrame();
+    void deliverFrame(MediaData data);
 
 private:
-    static unsigned referenceCount; // used to count how many instances of this class currently exist
+    static unsigned referenceCount; // used to length how many instances of this class currently exist
 };
 
-#endif

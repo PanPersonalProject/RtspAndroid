@@ -59,7 +59,7 @@ private:
   void deliverFrame();
 
 private:
-  static unsigned referenceCount; // used to count how many instances of this class currently exist
+  static unsigned referenceCount; // used to length how many instances of this class currently exist
   DeviceParameters fParams;
 };
 

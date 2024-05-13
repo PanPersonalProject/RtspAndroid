@@ -24,12 +24,12 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Note also that - unlike some other "*Streamer" demo applications - the resulting stream can be received only using a
 // RTSP client (such as "openRTSP")
 
-#include <liveMedia.hh>
+#include "liveMedia.hh"
 
-#include <BasicUsageEnvironment.hh>
-#include "include/announceURL.hh"
-#include "../../Base/include/AndroidLog.h"
-#include <GroupsockHelper.hh>
+#include "BasicUsageEnvironment.hh"
+#include "announceURL.hh"
+#include "AndroidLog.h"
+#include "GroupsockHelper.hh"
 
 UsageEnvironment* env;
 char const* inputFileName = "test.264";
