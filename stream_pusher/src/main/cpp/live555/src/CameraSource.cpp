@@ -6,12 +6,16 @@
 #include "CameraSource.h"
 //CameraSource.cpp
 #include "GroupsockHelper.hh" // for "gettimeofday()"
+#include "ByteBuffer.h"
+#include "FileUtil.h"
+
 CameraSource*
 CameraSource::createNew(UsageEnvironment& env) {
     return new CameraSource(env);
 }
-
+extern  ByteBuffer videoBufferQueue;
 EventTriggerId CameraSource::eventTriggerId = 0;
+bool testWriteBufferToVideoFile = false;//将视频帧保存到document目录下，用于检测编码后的视频帧数据是否正常
 
 unsigned CameraSource::referenceCount = 0;
 
@@ -34,6 +38,14 @@ CameraSource::~CameraSource() {
         envir().taskScheduler().deleteEventTrigger(eventTriggerId);
         eventTriggerId = 0;
     }
+}
+MediaData CameraSource::getNextFrame() {
+    MediaData mediaData;
+    videoBufferQueue.ReadData(&mediaData);
+    if(testWriteBufferToVideoFile){
+        FileUtil::writeDataToFile(mediaData.getFrameBytes(), mediaData.getFrameSize());
+    }
+    return mediaData;
 }
 
 void CameraSource::doGetNextFrame() {

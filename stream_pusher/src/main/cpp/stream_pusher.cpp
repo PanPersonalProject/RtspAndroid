@@ -2,13 +2,14 @@
 #include <string>
 #include <stdio.h>
 #include "AndroidLog.h"
+#include "FileUtil.h"
 #include "testH264VideoStreamer.h"
 #include "live555MediaServer.h"
 #include "CameraSource.h"
 #include "ByteBuffer.h"
 
 ByteBuffer videoBufferQueue;
-
+extern char const *inputFileName;
 
 
 extern "C"
@@ -21,10 +22,6 @@ Java_pan_project_stream_1pusher_StreamPushLib_00024Companion_startRtspServer(JNI
     startRtspServer(nativeIp, port);
     env->ReleaseStringUTFChars(ip, nativeIp);
 }
-
-extern char const *inputFileName;
-
-
 
 extern "C"
 JNIEXPORT void JNICALL
@@ -46,16 +43,10 @@ Java_pan_project_stream_1pusher_StreamPushLib_00024Companion_sendH264Frame(JNIEn
     int length = env->GetArrayLength(array);
     jbyte *elements = env->GetByteArrayElements(array, NULL);
     const unsigned char *data = reinterpret_cast<const unsigned char *>(elements);
-    MediaData *mediaData=new MediaData();
+    MediaData *mediaData = new MediaData();
     mediaData->putBuffer(data, length);
     videoBufferQueue.WriteData(mediaData);
     env->ReleaseByteArrayElements(array, elements, 0);
 }
 
 
-
-MediaData CameraSource::getNextFrame() {
-    MediaData mediaData;
-    videoBufferQueue.ReadData(&mediaData);
-    return mediaData;
-}

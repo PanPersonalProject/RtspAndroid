@@ -100,6 +100,7 @@ add_library(
         SHARED
         stream_pusher.cpp
         Base/src/AndroidLog.cpp
+        Base/src/FileUtil.cpp
         live555/src/testH264VideoStreamer.cpp
         live555/src/announceURL.cpp
         live555/src/WW_H264VideoServerMediaSubsession.cpp
