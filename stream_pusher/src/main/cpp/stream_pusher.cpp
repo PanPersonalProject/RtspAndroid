@@ -4,7 +4,6 @@
 #include "AndroidLog.h"
 #include "FileUtil.h"
 #include "testH264VideoStreamer.h"
-#include "live555MediaServer.h"
 #include "CameraSource.h"
 #include "ByteBuffer.h"
 

@@ -103,9 +103,6 @@ add_library(
         Base/src/FileUtil.cpp
         live555/src/testH264VideoStreamer.cpp
         live555/src/announceURL.cpp
-        live555/src/WW_H264VideoServerMediaSubsession.cpp
-        live555/src/WW_H264VideoSource.cpp
-        live555/src/live555MediaServer.cpp
         live555/src/CameraSource.cpp
         live555/src/ByteBuffer.cpp
         live555/src/MediaData.cpp
