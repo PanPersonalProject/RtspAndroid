@@ -1,6 +1,6 @@
 [versions]
 
-agp = "8.5.0-alpha02"
+agp = "8.5.0"
 cameraxVersion = "1.4.0-alpha04"
 kotlin = "1.9.0"
 coreKtx = "1.12.0"

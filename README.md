@@ -15,7 +15,7 @@ void printRtspUrl(const char *ip, int port, const char *streamName) {
 }
 ```
 
-2.拉流成功时，播放画面卡顿跳帧。目前排查h264编码后，getNextFrame获取的原始数据是正常的，应该是之后出了某种问题
+2.拉流成功时，播放画面卡顿跳帧。目前排查h264编码后，getNextFrame获取的原始数据是正常的，但是CameraSource的deliverFrame函数newFrameSize > fMaxSize，目前还没找到解决方案。
 
 
 ##### 开发环境：
