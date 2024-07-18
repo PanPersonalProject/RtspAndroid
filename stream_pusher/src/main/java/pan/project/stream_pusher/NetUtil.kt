@@ -1,90 +1,47 @@
 package pan.project.stream_pusher
 
-import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import android.net.wifi.WifiInfo
-import android.os.Handler
-import android.os.Looper
-import android.text.format.Formatter
-import android.util.Log
-import android.widget.Toast
 import java.io.IOException
 import java.net.NetworkInterface
 import java.net.ServerSocket
-import java.util.*
 
 object NetUtil {
-    private fun getMobileIp(): String {
-        var mobileIp = "0.0.0.0"
-        NetworkInterface.getNetworkInterfaces().let {
-            loo@ for (networkInterface in Collections.list(it)) {
-                for (inetAddresses in Collections.list(networkInterface.inetAddresses)) {
-                    if (!inetAddresses.isLoopbackAddress && !inetAddresses.isLinkLocalAddress) {
-                        inetAddresses.hostAddress?.let { hostAddress ->
-                            mobileIp = hostAddress
-                        }
-                        break@loo
-                    }
-                }
+    private const val VPN_INTERFACE = "tun"
+    private const val DEFAULT_IP = "0.0.0.0"
+    enum class IpType {
+        IPv4, IPv6, All
+    }
+    private var ipType = IpType.All
+
+    fun getIp(): String {
+        val interfaces: List<NetworkInterface> = NetworkInterface.getNetworkInterfaces().toList()
+        val vpnInterfaces = interfaces.filter { it.displayName.contains(VPN_INTERFACE) }
+        val address: String by lazy { interfaces.findAddress().firstOrNull() ?: DEFAULT_IP }
+        return if (vpnInterfaces.isNotEmpty()) {
+            val vpnAddresses = vpnInterfaces.findAddress()
+            vpnAddresses.firstOrNull() ?: address
+        } else {
+            address
+        }
+    }
+    private fun List<NetworkInterface>.findAddress(): List<String?> = this.asSequence()
+        .map { addresses -> addresses.inetAddresses.asSequence() }
+        .flatten()
+        .filter { address -> !address.isLoopbackAddress }
+        .map { it.hostAddress }
+        .filter { address ->
+            //exclude invalid IPv6 addresses
+            address?.startsWith("fe80") != true && // Exclude link-local addresses
+                    address?.startsWith("fc00") != true && // Exclude unique local addresses
+                    address?.startsWith("fd00") != true // Exclude unique local addresses
+        }
+        .filter { address ->
+            when (ipType) {
+                IpType.IPv4 -> address?.contains(":") == false
+                IpType.IPv6 -> address?.contains(":") == true
+                IpType.All -> true
             }
         }
-        return mobileIp
-    }
-
-    private fun getWifiIp(context: Context): String {
-        var wifiIp = ""
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-
-        // Android Q 以上建议使用getNetworkCapabilities API
-        connectivityManager.run {
-            activeNetwork?.let { network ->
-                getNetworkCapabilities(network)?.transportInfo?.let { transportInfo ->
-                    if (transportInfo is WifiInfo) {
-                        wifiIp = Formatter.formatIpAddress(transportInfo.ipAddress)
-                    } else if (transportInfo.javaClass.toString().contains("VpnTransportInfo")) {
-                        Handler(Looper.getMainLooper()).post {
-                            Toast.makeText(context, "获取ip失败，请关闭vpn", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                }
-            }
-        }
-        return wifiIp
-    }
-
-
-    fun getIp(context: Context): String {
-        val connectivityManager =
-            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        connectivityManager.run {
-            // Android M 以上建议使用getNetworkCapabilities API
-            activeNetwork?.let { network ->
-                getNetworkCapabilities(network)?.let { networkCapabilities ->
-                    if (networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) {
-                        when {
-                            networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> {
-                                // 通过手机流量
-                                val mobileIp = getMobileIp()
-                                Log.d("stream_pusher", "mobileIp: $mobileIp")
-                                return mobileIp
-                            }
-
-                            networkCapabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> {
-                                // 通过WIFI
-                                val wifiIp = getWifiIp(context)
-                                Log.d("stream_pusher", "wifiIp: $wifiIp")
-                                return wifiIp
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return ""
-    }
-
+        .toList()
     fun getAvailablePort(startPort: Int): Int {
         var port = startPort
         while (true) {

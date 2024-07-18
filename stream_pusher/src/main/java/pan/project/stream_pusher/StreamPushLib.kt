@@ -15,7 +15,7 @@ class StreamPushLib {
 
         // Used to load the 'stream_pusher' library on application startup.
         fun startRtspServer(context: Context) {
-            val ip = NetUtil.getIp(context)
+            val ip = NetUtil.getIp()
             val port = NetUtil.getAvailablePort(8554)
             Log.d("stream_pusher", "init: ip = $ip, port = $port")
             startRtspServer(ip, port)
