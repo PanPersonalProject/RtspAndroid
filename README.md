@@ -1,27 +1,84 @@
-### rtsp live555
+### 此RTSP推流程序分两部分：
 
-该组件是一个用于在 Android 平台上进行 RTSP 推流的工具，基于 Live555 库实现。通过该组件，您可以方便地将 Android 设备上的音频和视频流推送到 RTSP 服务器，以便进行实时流媒体传输。
+1. **采集和编码**：使用我编写的 [CameraX-H264](https://github.com/PanPersonalProject/CameraX-H264) 进行摄像头数据采集并编码为H264，同时采集麦克风数据并编码为AAC。
 
+2. **RTSP服务器**：使用 PedroSG94 的 [RTSP-Server](https://github.com/pedroSG94/RTSP-Server) 进行推流。
 
-#### 目前存在2个问题,尚未解决：
+#### 推送H264流
 
-1.推流时而成功，时而失败，原因不清楚。之前也存在调用announceURL(rtspServer, sms)获取不到ipv4和ipv6 ip的情况，所以就从android端获取ip和从8554开始查找可用port，目前vlc拉流时而成功，时而失败，失败时重启电脑能解决问题。
-```cpp
-告知rtspurl的函数
-void printRtspUrl(const char *ip, int port, const char *streamName) {
-    char rtspUrl[256];
-    sprintf(rtspUrl, "rtsp://%s:%d/%s", ip, port, streamName);
-    LOGI("%s", rtspUrl);
+```kotlin
+private val cameraPreviewInterface = object : CameraPreviewInterface {
+    override fun getPreviewView(): PreviewView = binding.preview
+    
+    override fun onSpsPpsVps(sps: ByteBuffer, pps: ByteBuffer?, vps: ByteBuffer?) {
+        val newSps = sps.duplicate()
+        val newPps = pps?.duplicate()
+        val newVps = vps?.duplicate() // H265需要vps
+        rtspServer.setVideoInfo(newSps, newPps, newVps) // 设置SPS、PPS到SDP协议中
+        if (!rtspServer.isRunning) {
+            rtspServer.startServer()
+        }
+    }
+
+    override fun onVideoBuffer(h264Buffer: ByteBuffer, info: MediaCodec.BufferInfo) {
+        rtspServer.sendVideo(h264Buffer, info) // 发送H264数据
+    }
 }
 ```
 
-2.拉流成功时，播放画面卡顿跳帧。目前排查h264编码后，getNextFrame获取的原始数据是正常的，但是CameraSource的deliverFrame函数newFrameSize > fMaxSize，目前还没找到解决方案。
+#### 推送AAC流
+
+```kotlin
+private val aacInterface = object : AacInterface {
+    override fun getAacData(aacBuffer: ByteBuffer, info: MediaCodec.BufferInfo) {
+        rtspServer.sendAudio(aacBuffer, info) // 发送AAC数据
+    }
+
+    override fun onAudioFormat(mediaFormat: MediaFormat) {
+        rtspServer.setAudioInfo(
+            sampleRate = mediaFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE), 
+            isStereo = mediaFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT) == 2
+        )
+    }
+}
+```
+
+完整流程请参考 [RtspCameraXFragment](app/src/main/java/pan/project/fastrtsplive/RtspCameraXFragment.kt)。
+
+#### RTSP server Log
+```kotlin
+rtspServer.setLogs(needShowLog)// 是否打印所有日志
+```
+
+tag:CommandsManager 可以看到rtsp协议交互信息，和推流url地址
 
 
-##### 开发环境：
-1.https://github.com/PanPersonalProject/live555_android  
-live555 24年较新的版本，配置了config.android-arm64 makefile生成a文件
+**Log示例**：
+```log
+2024-07-24 16:43:33.823  5905-8590  CommandsManager         pan.project.fastrtsplive             I  OPTIONS rtsp://192.168.0.106:1935/ RTSP/1.0
+                                                                                                    CSeq: 2
+                                                                                                    User-Agent: LibVLC/3.0.20 (LIVE555 Streaming Media v2016.11.28)
+2024-07-24 16:43:33.839  5905-8590  CommandsManager         pan.project.fastrtsplive             I  DESCRIBE rtsp://192.168.0.106:1935/ RTSP/1.0
+                                                                                                    CSeq: 3
+                                                                                                    User-Agent: LibVLC/3.0.20 (LIVE555 Streaming Media v2016.11.28)
+                                                                                                    Accept: application/sdp
+2024-07-24 16:43:33.854  5905-8590  CommandsManager         pan.project.fastrtsplive             I  SETUP rtsp://192.168.0.106:1935/streamid=0 RTSP/1.0
+                                                                                                    CSeq: 4
+                                                                                                    User-Agent: LibVLC/3.0.20 (LIVE555 Streaming Media v2016.11.28)
+                                                                                                    Transport: RTP/AVP;unicast;client_port=51050-51051
+2024-07-24 16:43:33.863  5905-8590  CommandsManager         pan.project.fastrtsplive             I  SETUP rtsp://192.168.0.106:1935/streamid=1 RTSP/1.0
+                                                                                                    CSeq: 5
+                                                                                                    User-Agent: LibVLC/3.0.20 (LIVE555 Streaming Media v2016.11.28)
+                                                                                                    Transport: RTP/AVP;unicast;client_port=51052-51053
+                                                                                                    Session: 1185d20035702ca
+2024-07-24 16:43:33.869  5905-8590  CommandsManager         pan.project.fastrtsplive             I  PLAY rtsp://192.168.0.106:1935/ RTSP/1.0
+                                                                                                    CSeq: 6
+                                                                                                    User-Agent: LibVLC/3.0.20 (LIVE555 Streaming Media v2016.11.28)
+                                                                                                    Session: 1185d20035702ca
+                                                                                                    Range: npt=0.000-
+```
 
-2.Android Studio版本: Android Studio Koala | 2023.3.2 Canary 2
 
-如果有音视频大佬愿意指导或建议，我将不胜感激,谢谢!!!
+#### 开发环境：
+
+Android Studio Ladybug | 2024.1.3 Canary 1
