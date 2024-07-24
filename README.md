@@ -8,7 +8,6 @@
 
    -使用live555实现RTSP服务器，请查看[live555](https://github.com/PanPersonalProject/RtspAndroid/tree/live555)分支
 
-                                            `
 #### 推送H264流
 
 ```kotlin
