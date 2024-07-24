@@ -1,8 +1,6 @@
 package pan.project.stream_pusher
 
-import android.content.Context
 import android.util.Log
-import java.util.concurrent.ArrayBlockingQueue
 
 class StreamPushLib {
 
@@ -14,7 +12,7 @@ class StreamPushLib {
     companion object {
 
         // Used to load the 'stream_pusher' library on application startup.
-        fun startRtspServer(context: Context) {
+        fun startRtspServer() {
             val ip = NetUtil.getIp()
             val port = NetUtil.getAvailablePort(8554)
             Log.d("stream_pusher", "init: ip = $ip, port = $port")

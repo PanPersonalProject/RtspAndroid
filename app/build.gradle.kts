@@ -46,25 +46,17 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
     }
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
+
     buildFeatures {
         viewBinding = true
     }
 }
 
 dependencies {
+    implementation(libs.bundles.essential)
+    implementation(libs.bundles.camerax)
+    implementation(libs.cameraRecord)
+//    implementation(project(":camera_record"))
 
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation(libs.androidx.constraintlayout)
-
-    implementation(libs.permissionx)
-    implementation(project(":camera_record"))
     implementation(project(":stream_pusher"))
 }
