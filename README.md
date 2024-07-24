@@ -2,8 +2,13 @@
 
 1. **采集和编码**：使用我编写的 [CameraX-H264](https://github.com/PanPersonalProject/CameraX-H264) 进行摄像头数据采集并编码为H264，同时采集麦克风数据并编码为AAC。
 
-2. **RTSP服务器**：使用 PedroSG94 的 [RTSP-Server](https://github.com/pedroSG94/RTSP-Server) 进行推流。
+2. **RTSP服务器**：
 
+   -使用 PedroSG94 的 [RTSP-Server](https://github.com/pedroSG94/RTSP-Server) 进行推流(main分支)
+
+   -使用live555实现RTSP服务器，请查看[live555](https://github.com/PanPersonalProject/RtspAndroid/tree/live555)分支
+
+                                            `
 #### 推送H264流
 
 ```kotlin
