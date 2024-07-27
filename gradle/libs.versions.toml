@@ -8,7 +8,7 @@ appcompat = "1.7.0"
 material = "1.12.0"
 constraintlayout = "2.1.4"
 minSdk = "29"
-cameraRecord="1.1.0"
+cameraRecord="1.2.0"
 rootencoder = "2.4.6"
 
 [libraries]
